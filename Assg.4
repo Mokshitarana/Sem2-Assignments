@@ -1,0 +1,216 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <map>
+#include <stdexcept>
+using namespace std;
+
+// ==== Custom Exception ====
+class UniversityException {
+public:
+    string message;
+    UniversityException(string msg) : message(msg) {}
+};
+
+// ==== Person Base Class ====
+class Person {
+protected:
+    string name;
+    int age, ID;
+public:
+    virtual void input() {
+        cout << "Name: "; getline(cin, name);
+        cout << "Age: "; cin >> age;
+        cout << "ID: "; cin >> ID;
+        cin.ignore();
+        if (name.empty() || age <= 0) throw UniversityException("Invalid person details.");
+    }
+    virtual void display() {
+        cout << "Name: " << name << ", Age: " << age << ", ID: " << ID << endl;
+    }
+    virtual float calculatePayment() { return 0; }
+    int getID() { return ID; }
+    string getName() { return name; }
+    virtual ~Person() {}
+};
+
+// ==== Student ====
+class Student : public Person {
+    float GPA;
+public:
+    void input() override {
+        Person::input();
+        cout << "GPA: "; cin >> GPA; cin.ignore();
+        if (GPA < 0 || GPA > 4.0) throw UniversityException("GPA must be between 0 and 4.0");
+    }
+    void display() override {
+        Person::display();
+        cout << "GPA: " << GPA << endl;
+    }
+    float calculatePayment() override { return 10000; }
+};
+
+// ==== Professor ====
+class Professor : public Person {
+    string dept;
+public:
+    void input() override {
+        Person::input();
+        cout << "Department: "; getline(cin, dept);
+    }
+    void display() override {
+        Person::display();
+        cout << "Department: " << dept << endl;
+    }
+    float calculatePayment() override { return 50000; }
+};
+
+// ==== Course ====
+class Course {
+    string code, title;
+    Professor* instructor;
+public:
+    void input(vector<Professor*>& profs) {
+        cout << "Course Code: "; getline(cin, code);
+        cout << "Title: "; getline(cin, title);
+        if (profs.empty()) throw UniversityException("No professors available.");
+        cout << "Choose Instructor:\n";
+        for (int i = 0; i < profs.size(); i++)
+            cout << i << ". " << profs[i]->getName() << endl;
+        int ch; cin >> ch; cin.ignore();
+        if (ch < 0 || ch >= (int)profs.size()) throw UniversityException("Invalid choice.");
+        instructor = profs[ch];
+    }
+    void display() {
+        cout << "Course: " << code << " - " << title << "\nInstructor: " << instructor->getName() << endl;
+    }
+    string getCode() { return code; }
+};
+
+// ==== GradeBook ====
+class GradeBook {
+    map<int, float> grades;
+public:
+    void add(int id, float grade) {
+        if (grade < 0 || grade > 100) throw UniversityException("Grade must be between 0 and 100.");
+        grades[id] = grade;
+    }
+    float average() {
+        if (grades.empty()) return 0;
+        float sum = 0;
+        for (auto& g : grades) sum += g.second;
+        return sum / grades.size();
+    }
+};
+
+// ==== EnrollmentManager ====
+class EnrollmentManager {
+    map<int, vector<string>> data;
+public:
+    void enroll(int id, string course) {
+        if (course.empty()) throw UniversityException("Invalid course code.");
+        data[id].push_back(course);
+    }
+    void show(int id) {
+        cout << "Student " << id << " enrolled in: ";
+        for (auto& c : data[id]) cout << c << " ";
+        cout << endl;
+    }
+};
+
+// ==== UniversitySystem ====
+class UniversitySystem {
+    vector<Student*> students;
+    vector<Professor*> professors;
+    vector<Course> courses;
+    GradeBook gb;
+    EnrollmentManager em;
+
+public:
+    void addStudent() {
+        auto* s = new Student();
+        s->input();
+        students.push_back(s);
+    }
+
+    void addProfessor() {
+        auto* p = new Professor();
+        p->input();
+        professors.push_back(p);
+    }
+
+    void addCourse() {
+        Course c;
+        c.input(professors);
+        courses.push_back(c);
+    }
+
+    void enrollStudent() {
+        int id;
+        string code;
+        cout << "Student ID: "; cin >> id; cin.ignore();
+        cout << "Course Code: "; getline(cin, code);
+        em.enroll(id, code);
+    }
+
+    void addGrade() {
+        int id; float g;
+        cout << "Student ID: "; cin >> id;
+        cout << "Grade: "; cin >> g; cin.ignore();
+        gb.add(id, g);
+    }
+
+    void showAll() {
+        cout << "\n--- Students ---\n";
+        for (auto s : students) s->display();
+
+        cout << "\n--- Professors ---\n";
+        for (auto p : professors) p->display();
+
+        cout << "\n--- Courses ---\n";
+        for (auto& c : courses) c.display();
+
+        cout << "\n--- Enrollments ---\n";
+        for (auto s : students) em.show(s->getID());
+
+        cout << "\nAverage Grade: " << gb.average() << endl;
+    }
+
+    ~UniversitySystem() {
+        for (auto s : students) delete s;
+        for (auto p : professors) delete p;
+    }
+};
+
+// ==== Main Menu ====
+int main() {
+    UniversitySystem uni;
+    int ch;
+
+    while (true) {
+        try {
+            cout << "\n1. Add Student\n2. Add Professor\n3. Add Course\n4. Enroll Student\n5. Add Grade\n6. Show All\n0. Exit\nChoice: ";
+            if (!(cin >> ch)) {
+                throw UniversityException("Invalid input. Please enter a number.");
+            }
+            cin.ignore();
+
+            switch (ch) {
+                case 1: uni.addStudent(); break;
+                case 2: uni.addProfessor(); break;
+                case 3: uni.addCourse(); break;
+                case 4: uni.enrollStudent(); break;
+                case 5: uni.addGrade(); break;
+                case 6: uni.showAll(); break;
+                case 0: cout << "Exiting...\n"; return 0;
+                default: cout << "Invalid option.\n";
+            }
+        } catch (UniversityException& e) {
+            cout << "[Error] " << e.message << endl;
+            cin.clear();                
+            cin.ignore(1000, '\n');     
+        }
+    }
+
+    return 0;
+}
