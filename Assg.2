@@ -1,0 +1,167 @@
+#include <iostream>
+#include <string>
+#include <map>
+#include <vector>
+using namespace std;
+
+class Person {
+protected:
+    string name;
+    int age, ID;
+public:
+    void basicInfo() {
+        cout << "Enter name: ";
+        getline(cin, name);
+        cout << "Enter age: ";
+        cin >> age;
+        cout << "Enter ID: ";
+        cin >> ID;
+        cin.ignore();
+    }
+    virtual void displayDetails() {
+        cout << "Name: " << name << ", Age: " << age << ", ID: " << ID << endl;
+    }
+    virtual float calculatePayment() { return 0; }
+    int getID() { return ID; }
+    virtual ~Person() {}
+};
+
+class Student : public Person {
+    float GPA;
+public:
+    void studentInfo() {
+        basicInfo();
+        cout << "Enter GPA: ";
+        cin >> GPA;
+        cin.ignore();
+        GPA = (GPA >= 0 && GPA <= 4.0) ? GPA : 0.0;
+    }
+    void displayDetails() override {
+        Person::displayDetails();
+        cout << "GPA: " << GPA << endl;
+    }
+    float calculatePayment() override { return 10000.0; }
+};
+
+class Professor : public Person {
+    string department;
+public:
+    void professorInfo() {
+        basicInfo();
+        cout << "Enter department: ";
+        getline(cin, department);
+    }
+    void displayDetails() override {
+        Person::displayDetails();
+        cout << "Department: " << department << endl;
+    }
+    float calculatePayment() override { return 50000.0; }
+};
+
+class Course {
+    string code, title;
+    int credits;
+public:
+    void courseInfo() {
+        cout << "Enter course code: ";
+        getline(cin, code);
+        cout << "Enter title: ";
+        getline(cin, title);
+        cout << "Enter credits: ";
+        cin >> credits;
+        cin.ignore();
+        credits = (credits > 0) ? credits : 1;
+    }
+    void display() {
+        cout << "Course: " << code << " - " << title << " (" << credits << " credits)" << endl;
+    }
+};
+
+class Department {
+    string name;
+public:
+    void departmentInfo() {
+        cout << "Enter department name: ";
+        getline(cin, name);
+    }
+    void display() {
+        cout << "Department: " << name << endl;
+    }
+};
+
+class GradeBook {
+    map<int, float> grades;
+public:
+    void add() {
+        int id;
+        float grade;
+        cout << "Enter student ID: ";
+        cin >> id;
+        cout << "Enter grade: ";
+        cin >> grade;
+        cin.ignore();
+        if (grade >= 0 && grade <= 100)
+            grades[id] = grade;
+        else
+            cout << "Invalid grade.\n";
+    }
+
+    float average() {
+        float sum = 0;
+        for (auto& g : grades) sum += g.second;
+        return grades.empty() ? 0 : sum / grades.size();
+    }
+};
+
+class EnrollmentManager {
+    map<int, vector<string>> enrollments;
+public:
+    void enroll() {
+        int id;
+        string course;
+        cout << "Enter student ID: ";
+        cin >> id;
+        cin.ignore();
+        cout << "Enter course code: ";
+        getline(cin, course);
+        enrollments[id].push_back(course);
+    }
+    void show(int id) {
+        cout << "Student " << id << " enrolled in: ";
+        for (auto& c : enrollments[id]) cout << c << " ";
+        cout << endl;
+    }
+};
+
+int main() {
+    Student s;
+    Professor p;
+    Course c;
+    Department d;
+    GradeBook gb;
+    EnrollmentManager em;
+
+    cout << "\n--- Student Info ---\n"; s.studentInfo();
+    cout << "\n--- Professor Info ---\n"; p.professorInfo();
+    cout << "\n--- Course Info ---\n"; c.courseInfo();
+    cout << "\n--- Department Info ---\n"; d.departmentInfo();
+    cout << "\n--- Add Grade ---\n"; gb.add();
+    cout << "\n--- Enroll Student ---\n"; em.enroll();
+
+    cout << "\n--- DETAILS ---\n";
+    s.displayDetails();
+    p.displayDetails();
+    c.display();
+    d.display();
+    cout << "Average Grade: " << gb.average() << endl;
+
+    em.show(s.getID());
+
+    Person* people[] = { &s, &p };
+    for (auto* person : people) {
+        person->displayDetails();
+        cout << "Payment: $" << person->calculatePayment() << "\n\n";
+    }
+
+    return 0;
+}
