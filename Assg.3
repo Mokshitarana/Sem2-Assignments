@@ -1,0 +1,182 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <map>
+#include <stdexcept>
+using namespace std;
+
+// ========== Base Class ==========
+class Person {
+protected:
+    string name;
+    int age, ID;
+public:
+    virtual void input() {
+        cout << "Name: "; getline(cin, name);
+        cout << "Age: "; cin >> age;
+        cout << "ID: "; cin >> ID;
+        cin.ignore();
+    }
+    virtual void display() {
+        cout << "Name: " << name << ", Age: " << age << ", ID: " << ID << endl;
+    }
+    virtual float calculatePayment() { return 0; }
+    string getName() { return name; }
+    virtual ~Person() {}
+};
+
+// ========== Professors ==========
+class Professor : public Person {
+protected:
+    string dept;
+public:
+    void input() override {
+        Person::input();
+        cout << "Department: "; getline(cin, dept);
+    }
+    void display() override {
+        Person::display();
+        cout << "Department: " << dept << endl;
+    }
+};
+
+class AssistantProfessor : public Professor {
+public:
+    float calculatePayment() override { return 40000; }
+};
+
+class AssociateProfessor : public Professor {
+public:
+    float calculatePayment() override { return 60000; }
+};
+
+class FullProfessor : public Professor {
+public:
+    float calculatePayment() override { return 80000; }
+};
+
+// ========== Students ==========
+class Student : public Person {
+protected:
+    string program;
+public:
+    void input() override {
+        Person::input();
+        cout << "Program: "; getline(cin, program);
+    }
+    void display() override {
+        Person::display();
+        cout << "Program: " << program << endl;
+    }
+};
+
+class UndergraduateStudent : public Student {
+    string major, minor;
+public:
+    void input() override {
+        Student::input();
+        cout << "Major: "; getline(cin, major);
+        cout << "Minor: "; getline(cin, minor);
+    }
+    void display() override {
+        Student::display();
+        cout << "Major: " << major << ", Minor: " << minor << endl;
+    }
+};
+
+class GraduateStudent : public Student {
+    string topic;
+    Professor* advisor;
+public:
+    void input(Professor* profs[], int count) {
+        Student::input();
+        cout << "Research topic: "; getline(cin, topic);
+        cout << "Select advisor:\n";
+        for (int i = 0; i < count; ++i)
+            cout << i<< profs[i]->getName() << endl;
+        int choice;
+        cin >> choice;
+        cin.ignore();
+        advisor = profs[choice];
+    }
+    void display() override {
+        Student::display();
+        cout << "Research Topic: " << topic << "\nAdvisor: " << advisor->getName() << endl;
+    }
+};
+
+// ========== Course ==========
+class Course {
+    string code, title;
+    Professor* instructor;
+public:
+    void input(Professor* profs[], int count) {
+        cout << "Course code: "; getline(cin, code);
+        cout << "Title: "; getline(cin, title);
+        cout << "Select instructor:\n";
+        for (int i = 0; i < count; ++i)
+            cout << i << profs[i]->getName() << endl;
+        int choice;
+        cin >> choice;
+        cin.ignore();
+        instructor = profs[choice];
+    }
+    void display() {
+        cout << "Course: " << code << " - " << title << "\nInstructor: " << instructor->getName() << endl;
+    }
+};
+
+// ========== Department ==========
+class Department {
+    string name;
+    vector<Professor*> profs;
+public:
+    void input() {
+        cout << "Department name: "; getline(cin, name);
+    }
+    void add(Professor* p) { profs.push_back(p); }
+    void display() {
+        cout << "Department: " << name << "\nProfessors:\n";
+        for (auto p : profs) p->display();
+    }
+};
+
+// ========== Main ==========
+int main() {
+    AssistantProfessor ap;
+    AssociateProfessor asp;
+    FullProfessor fp;
+
+    cout << "--- Assistant Professor ---\n"; ap.input();
+    cout << "--- Associate Professor ---\n"; asp.input();
+    cout << "--- Full Professor ---\n"; fp.input();
+
+    Department dept;
+    dept.input();
+    dept.add(&ap);
+    dept.add(&asp);
+    dept.add(&fp);
+
+    Professor* profs[] = { &ap, &asp, &fp };
+
+    UndergraduateStudent ug;
+    GraduateStudent grad;
+
+    cout << "--- Undergraduate Student ---\n"; ug.input();
+    cout << "--- Graduate Student ---\n"; grad.input(profs, 3);
+
+    Course course;
+    cout << "--- Course Info ---\n"; course.input(profs, 3);
+
+    cout << "\n=== DISPLAY ===\n";
+    dept.display();
+    ug.display();
+    grad.display();
+    course.display();
+
+    Person* people[] = { &ap, &asp, &fp, &ug, &grad };
+    for (auto p : people)
+        cout << p->getName() << " is paid: " << p->calculatePayment() << endl;
+
+    return 0;
+}
